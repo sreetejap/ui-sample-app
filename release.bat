@@ -168,7 +168,7 @@ exit /b 0
     else
         if (%~1 == "prod" || %~1 == "staging")
             echo Starting release of v%~2 to %~1 environment for a %~3 project
-
+            : : added extra comment
 			call : git_checkout_branch %~1
 
 			if (%~3 == "ifs" || %~3 == "svc")
