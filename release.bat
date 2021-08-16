@@ -29,7 +29,7 @@ exit /b 0
     else
         echo npm not found
         echo Installing npm...
-        call : install_package npm
+        call :install_package npm
 exit /b 0
 
 : : Checkout & pull the git branch based on the specified environment
@@ -42,7 +42,7 @@ exit /b 0
         start "" /wait /b git pull
     else
         echo Unable to locate git, trying to install it...
-        call : install_package git
+        call :install_package git
 exit /b 0
 
 : : Checkout, merge & tag the specified git branch from the lower level branch
@@ -101,7 +101,7 @@ exit /b 0
                 echo %~1 is not a staging or prod branch, nothing to do here, manual git branch mgmt reccomended.
     else
         echo Unable to locate git, trying to install it...
-        call : install_package git
+        call :install_package git
 exit /b 0
 
 : : Create a Github release using it's cli tool: gh
@@ -126,7 +126,7 @@ exit /b 0
         echo Github %~1 release created for version %~2.
     else
         echo Unable to locate gh, trying to install it.
-        call : install_package gh
+        call :install_package gh
 exit /b 0
 
 : : Re-initializes terraform in the project's root directory with the specified environment
@@ -143,7 +143,7 @@ exit /b 0
 
         start "" /wait /b terraform workspace select %~1
 
-        call : install_npm_packages
+        call :install_npm_packages
 
         echo Running terraform apply.
 
@@ -152,7 +152,7 @@ exit /b 0
         echo Terraform apply completed for %~1 environment.
     else
         echo Unable to locate terraform, trying to install it...
-        call : install_package terraform
+        call :install_package terraform
 exit /b 0
 
 : : Main invokation function to release a project
@@ -169,14 +169,14 @@ exit /b 0
         if (%~1 == "prod" || %~1 == "staging")
             echo Starting release of v%~2 to %~1 environment for a %~3 project
             : : added extra comment
-			call : git_checkout_branch %~1
+			call :git_checkout_branch %~1
 
 			if (%~3 == "ifs" || %~3 == "svc")
-				call : terraform_apply %~1
+				call :terraform_apply %~1
 
-			call : git_tag_and_merge %~1 %~2
+			call :git_tag_and_merge %~1 %~2
 
-			call : gh_release %~1 %~2
+			call :gh_release %~1 %~2
 
 			echo Release cycle completed.
         else
@@ -184,4 +184,4 @@ exit /b 0
 exit /b 0
 
 : : Invoke the run function and passes all arguments intercepted from cli
-call : run %*
+call :run %*
