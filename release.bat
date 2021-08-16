@@ -164,11 +164,7 @@ exit /b 0
     if (%~1 == "" || %~2 == "" || %~3 == "")
         echo Some options are missing, try again with the following options:
         echo environment, version, type (ui || svc || ifs)
-<<<<<<< HEAD
         echo Example usage: ./release.bat staging 1.0.0-rc1 ui
-=======
-        echo Example usage: bash ./release.sh staging 1.0.0-rc1 ui
->>>>>>> a4eb9ef5c10676c0e12402a56d08d2d188fba722
     else
         if (%~1 == "prod" || %~1 == "staging")
             echo Starting release of v%~2 to %~1 environment for a %~3 project
