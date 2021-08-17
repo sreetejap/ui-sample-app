@@ -123,7 +123,7 @@ exit /b 0
     REM if where gh
     echo "Creating a Github %1 release."
     set /p _message=Please enter the release summary:
-    if "%message%" equ "" (
+    if "%_message%" equ "" (
         echo "No summary was entered, exiting process."
     ) else (
         if "%1" equ "staging" (
