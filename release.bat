@@ -184,8 +184,8 @@ exit /b 0
         echo "Example usage: release.bat staging 1.0.0-rc1 ui"
         goto:eof
     ) else (
-        if "%1" equ "prod" set /a "_exp1=1"
-        if "%1" equ "staging" set /a "_exp2=1"
+        if "%1" equ "prod" ( set /a "_exp1=1" ) else ( set /a "_exp1=0")
+        if "%1" equ "staging" ( set /a "_exp2=1" ) else ( set /a "_exp2=0")
         set /a "_env=_exp1 | _exp2"
         if "%_env%" equ "1" (
             echo Starting release of v%2 to %1 environment for a %3 project
