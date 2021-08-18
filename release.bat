@@ -9,49 +9,50 @@ goto :run %*
 : : package name.
 :install_package
     start "" /wait /b choco upgrade all -y
-    for %%y in %* 
-        do gsudo choco install %%y && %errorlevel% && break
+    for %%y in %* do (
+        gsudo choco install %%y
+    )     
 exit /b 0
 
 : : Install all npm packages in opt/nodejs for microservice projects
 : : TODO: Loop through multiple layer folders
 :install_npm-packages
-    REM if where npm
-    if exist opt/nodejs (
-        echo "Found directory opt/nodejs, installing npm packages"
-        cd opt/nodejs
-        if exist package.json (
-            start "" /wait /b npm install --legacy-peer-deps
-            echo "Finished installing npm packages"
+    where /q npm
+    if %errorlevel% equ 0 (
+        if exist opt/nodejs (
+            echo "Found directory opt/nodejs, installing npm packages"
+            cd opt/nodejs
+            if exist package.json (
+                start "" /wait /b npm install --legacy-peer-deps
+                echo "Finished installing npm packages"
+            ) else (
+                echo "No package.json defined, nothing to install."
+            )   
+            cd ..
+            cd ..
         ) else (
-            echo "No package.json defined, nothing to install."
-        )   
-        cd ..
-        cd ..
+            echo Found filesystem object opt/nodejs but it's not a directory
+        )
     ) else (
-        echo Found filesystem object opt/nodejs but it's not a directory
+        echo "npm not found"
+        echo "Installing npm..."
+        call :install_package npm
     )
-        
-    
-            
-    REM else
-    REM     echo npm not found
-    REM     echo Installing npm...
-    REM     call :install_package npm
 exit /b 0
 
 : : Checkout & pull the git branch based on the specified environment
 : : Accepts 1 argument of type string for the branch name
 : : @param {String} Environment - Required
 :git_checkout_branch
-    : : if exist git (
-    echo "Switching to %1 branch"
-    start "" /wait /b git checkout %1
-    start "" /wait /b git pull
-    : : ) else (
-    : :     echo "Unable to locate git, trying to install it..."
-    : :     call :install_package git
-    : : )     
+    where /q git.exe
+    if %errorlevel% equ 0 (
+        echo "Switching to %1 branch"
+        start "" /wait /b git checkout %1
+        start "" /wait /b git pull
+    ) else (
+        echo "Unable to locate git, trying to install it..."
+        call :install_package git
+    )     
 exit /b 0
 
 : : Checkout, merge & tag the specified git branch from the lower level branch
@@ -59,60 +60,62 @@ exit /b 0
 : : @param {String} environment - Required
 : : @param {String} version - Required
 :git_tag_and_merge
-    REM if where git
-    echo "Switching to %1 branch"
+    where /q git.exe
 
-    start "" /wait /b git checkout %1
+    if %errorlevel% equ 0 (
+        echo "Switching to %1 branch"
 
-    start "" /wait /b git pull origin %1
+        start "" /wait /b git checkout %1
 
-    if "%1" equ "staging" (
-        echo "Merging dev branch into %1."
+        start "" /wait /b git pull origin %1
+
+        if "%1" equ "staging" (
+            echo "Merging dev branch into %1."
 			
-		start "" /wait /b git checkout dev
+		    start "" /wait /b git checkout dev
 
-		start "" /wait /b git pull origin dev
+		    start "" /wait /b git pull origin dev
 
-		start "" /wait /b git checkout %1
+		    start "" /wait /b git checkout %1
 			
-		start "" /wait /b git pull origin %1
+		    start "" /wait /b git pull origin %1
 
-		start "" /wait /b git merge dev
+		    start "" /wait /b git merge dev
 
-		echo "Merge from dev to %1 completed."
+		    echo "Merge from dev to %1 completed."
 
-		start "" /wait /b git tag %2
+		    start "" /wait /b git tag %2
 
-		start "" /wait /b git push origin %1 --tags
+		    start "" /wait /b git push origin %1 --tags
 
-		echo "Tagged the latest commit of %1."
-    ) else (
-        if "%1" equ "prod" (
-            start "" /wait /b git checkout staging
-
-			start "" /wait /b git pull origin staging
-
-			start "" /wait /b git checkout %1
-			
-			start "" /wait /b git pull origin %1
-
-			start "" /wait /b git merge staging
-
-			echo "Merge from staging to %1 completed."
-
-			start "" /wait /b git tag %2
-
-			start "" /wait /b git push origin %1 --tags
-
-			echo "Tagged the latest commit of %1."
+		    echo "Tagged the latest commit of %1."
         ) else (
-            echo "%1 is not a staging or prod branch, nothing to do here, manual git branch mgmt reccomended."
-        )            
-    )  
-            
-    REM else
-    REM     echo Unable to locate git, trying to install it...
-    REM     call :install_package git
+            if "%1" equ "prod" (
+                start "" /wait /b git checkout staging
+
+			    start "" /wait /b git pull origin staging
+
+			    start "" /wait /b git checkout %1
+			
+			    start "" /wait /b git pull origin %1
+
+			    start "" /wait /b git merge staging
+
+			    echo "Merge from staging to %1 completed."
+
+			    start "" /wait /b git tag %2
+
+			    start "" /wait /b git push origin %1 --tags
+
+			    echo "Tagged the latest commit of %1."
+            ) else (
+                echo "%1 is not a staging or prod branch, nothing to do here, manual git branch mgmt reccomended."
+            )            
+        )  
+    ) else (
+        echo Unable to locate git, trying to install it...
+        call :install_package git
+    )
 exit /b 0
 
 : : Create a Github release using it's cli tool: gh
@@ -120,55 +123,60 @@ exit /b 0
 : : @param {String} environment - Required
 : : @param {String} version - Required
 :gh_release
-    REM if where gh
-    echo "Creating a Github %1 release."
-    set /p _message=Please enter the release summary:
-    if "%_message%" equ "" (
-        echo "No summary was entered, exiting process."
-    ) else (
-        if "%1" equ "staging" (
-            start "" /wait /b gh release create %2 -t "%2" -n "%message%" -p
+    where /q gh.exe
+    if %errorlevel% equ 0 (
+        echo "Creating a Github %1 release."
+        set /p _message=Please enter the release summary:
+        if "%_message%" equ "" (
+            echo "No summary was entered, exiting process."
         ) else (
-            if "%1" equ "prod" (
-                start "" /wait /b gh release create %2 -t "%2" -n "%message%"
+            if "%1" equ "staging" (
+                start "" /wait /b gh release create %2 -t "%2" -n "%message%" -p
             ) else (
-                echo "%1 is not a staging or prod branch, nothing to do here, manual Github release mgmt reccomended."
-            )       
-        )           
-    )
-    echo "Github %1 release created for version %2."    
-    REM else
-    REM     echo Unable to locate gh, trying to install it.
-    REM     call :install_package gh
+                if "%1" equ "prod" (
+                    start "" /wait /b gh release create %2 -t "%2" -n "%message%"
+                ) else (
+                    echo "%1 is not a staging or prod branch, nothing to do here, manual Github release mgmt reccomended."
+                )       
+            )           
+        )
+        echo "Github %1 release created for version %2."
+    ) else (
+        echo Unable to locate gh, trying to install it.
+        call :install_package gh
+    )    
 exit /b 0
 
 : : Re-initializes terraform in the project's root directory with the specified environment
 : : @param {String} environment - Required
 :terraform_apply
     REM if where terraform
-    echo "removing .terraform directory"
+    where /q terraform.exe
+    if %errorlevel% equ 0 (
+        echo "removing .terraform directory"
 
-    start "" /wait /b rd /s /q .terraform
+        start "" /wait /b rd /s /q .terraform
 
-    echo "Running Terraform init."
+        echo "Running Terraform init."
 
-    start "" /wait /b terraform init --backend-config=config/%1.txt
+        start "" /wait /b terraform init --backend-config=config/%1.txt
 
-    start "" /wait /b terraform workspace select %1
+        start "" /wait /b terraform workspace select %1
 
-    call :install_npm_packages
+        call :install_npm_packages
 
-    echo "Running terraform apply."
+        echo "Running terraform apply."
 
-    start "" /wait /b terraform apply
+        start "" /wait /b terraform apply
 
-    echo "Terraform apply completed for %1 environment."
-    REM else
-    REM     echo Unable to locate terraform, trying to install it...
-    REM     call :install_package terraform
+        echo "Terraform apply completed for %1 environment."
+    ) else (
+        echo "Unable to locate terraform, trying to install it..."
+        call :install_package terraform
+    )  
 exit /b 0
 
-: : Main invokation function to release a project
+: : Main sub_routine to release a project
 : : Accepts 3 arguments via cli
 : : @param {String} environment - Required
 : : @param {String} version - Required
