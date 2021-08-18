@@ -9,14 +9,9 @@ goto :run %*
 : : package name.
 :install_package
     start "" /wait /b choco upgrade all -y
-<<<<<<< HEAD
-    for %%y in %* 
-        do gsudo choco install %%y && %errorlevel% && break 
-=======
     for %%y in %* do (
         gsudo choco install %%y
     )     
->>>>>>> dev
 exit /b 0
 
 : : Install all npm packages in opt/nodejs for microservice projects
@@ -155,7 +150,7 @@ exit /b 0
 : : Re-initializes terraform in the project's root directory with the specified environment
 : : @param {String} environment - Required
 :terraform_apply
-    where /q terraform.exe
+    start "" /wait /b where /q terraform.exe
     if %errorlevel% equ 0 (
         echo "removing .terraform directory"
 
